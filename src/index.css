@@ -18,7 +18,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.safe-bottom {
-  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-  margin-bottom: env(safe-area-inset-bottom);
+.safe-area {
+  margin-left: env(safe-area-inset-left);
+}
+
+@media (orientation: landscape) {
+  .safe-area {
+    margin-left: 0;
+    margin-bottom: env(safe-area-inset-bottom);
+  }
 }

@@ -41,20 +41,6 @@ const stopPropagation = (fn: () => void) => (e: MouseEvent) => {
   fn();
 };
 
-const isFullscreen = () => !!document.fullscreenElement;
-
-const toggleFullscreen = async () => {
-  try {
-    if (isFullscreen()) {
-      await document.exitFullscreen();
-    } else {
-      await document.documentElement.requestFullscreen();
-    }
-  } catch {
-    // Fullscreen not supported (e.g., iOS Safari)
-  }
-};
-
 // Components
 const ScorePanel = ({
   team,
@@ -99,19 +85,12 @@ const ControlButton = ({
 // Main App
 const App = () => {
   const [state, setState] = useState<ScoreState>(getInitialState);
-  const [fullscreen, setFullscreen] = useState(isFullscreen);
 
   useEffect(() => {
     const json = JSON.stringify(state);
     localStorage.setItem('vball-score', json);
     window.history.replaceState(null, '', `#${encodeURIComponent(json)}`);
   }, [state]);
-
-  useEffect(() => {
-    const handler = () => setFullscreen(isFullscreen());
-    document.addEventListener('fullscreenchange', handler);
-    return () => document.removeEventListener('fullscreenchange', handler);
-  }, []);
 
   const updateScore = (team: Team, delta: number) => {
     setState(prev => ({ ...prev, [team]: Math.max(0, prev[team] + delta) }));
@@ -134,39 +113,32 @@ const App = () => {
       <ScorePanel team="red" score={state.red} onClick={() => updateScore('red', 1)} />
       <ScorePanel team="blue" score={state.blue} onClick={() => updateScore('blue', 1)} />
 
-      {/* Controls */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 opacity-20 hover:opacity-100 active:opacity-100 transition-opacity duration-300 px-6 py-3 bg-black/40 rounded-full backdrop-blur-md border border-white/20 safe-bottom">
+      {/* Controls - left side in portrait, bottom center in landscape */}
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 landscape:left-1/2 landscape:top-auto landscape:bottom-4 landscape:-translate-x-1/2 landscape:translate-y-0 flex flex-col landscape:flex-row items-center gap-4 landscape:gap-3 px-4 py-6 landscape:px-6 landscape:py-3 bg-black/50 rounded-3xl landscape:rounded-full backdrop-blur-md border border-white/20 safe-area">
         <ControlButton
           onClick={() => updateScore('red', -1)}
-          className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full"
+          className="w-12 h-12 landscape:w-10 landscape:h-10 flex items-center justify-center bg-white/10 rounded-full text-lg"
         >
           -
         </ControlButton>
 
         <ControlButton
           onClick={swap}
-          className="text-[10px] tracking-widest font-black uppercase px-4"
+          className="text-[10px] tracking-widest font-black uppercase py-2 landscape:py-0 px-2 landscape:px-4"
         >
           Swap
         </ControlButton>
 
         <ControlButton
           onClick={reset}
-          className="text-[10px] tracking-widest font-black uppercase px-4"
+          className="text-[10px] tracking-widest font-black uppercase py-2 landscape:py-0 px-2 landscape:px-4"
         >
           Reset
         </ControlButton>
 
         <ControlButton
-          onClick={toggleFullscreen}
-          className="text-[10px] tracking-widest font-black uppercase px-4"
-        >
-          {fullscreen ? 'Exit' : 'Full'}
-        </ControlButton>
-
-        <ControlButton
           onClick={() => updateScore('blue', -1)}
-          className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full"
+          className="w-12 h-12 landscape:w-10 landscape:h-10 flex items-center justify-center bg-white/10 rounded-full text-lg"
         >
           -
         </ControlButton>
