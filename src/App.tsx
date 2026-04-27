@@ -41,6 +41,20 @@ const stopPropagation = (fn: () => void) => (e: MouseEvent) => {
   fn();
 };
 
+const isFullscreen = () => !!document.fullscreenElement;
+
+const toggleFullscreen = async () => {
+  try {
+    if (isFullscreen()) {
+      await document.exitFullscreen();
+    } else {
+      await document.documentElement.requestFullscreen();
+    }
+  } catch {
+    // Fullscreen not supported (e.g., iOS Safari)
+  }
+};
+
 // Components
 const ScorePanel = ({
   team,
@@ -85,12 +99,19 @@ const ControlButton = ({
 // Main App
 const App = () => {
   const [state, setState] = useState<ScoreState>(getInitialState);
+  const [fullscreen, setFullscreen] = useState(isFullscreen);
 
   useEffect(() => {
     const json = JSON.stringify(state);
     localStorage.setItem('vball-score', json);
     window.history.replaceState(null, '', `#${encodeURIComponent(json)}`);
   }, [state]);
+
+  useEffect(() => {
+    const handler = () => setFullscreen(isFullscreen());
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
 
   const updateScore = (team: Team, delta: number) => {
     setState(prev => ({ ...prev, [team]: Math.max(0, prev[team] + delta) }));
@@ -105,7 +126,7 @@ const App = () => {
 
   const swap = () => setState(prev => ({ ...prev, swapped: !prev.swapped }));
 
-  const containerClass = `flex h-screen w-screen overflow-hidden select-none touch-none ${state.swapped ? 'flex-col-reverse landscape:flex-row-reverse' : 'flex-col landscape:flex-row'
+  const containerClass = `flex h-dvh w-dvw overflow-hidden select-none touch-none ${state.swapped ? 'flex-col-reverse landscape:flex-row-reverse' : 'flex-col landscape:flex-row'
     }`;
 
   return (
@@ -114,7 +135,7 @@ const App = () => {
       <ScorePanel team="blue" score={state.blue} onClick={() => updateScore('blue', 1)} />
 
       {/* Controls */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 opacity-10 hover:opacity-100 transition-opacity duration-300 px-6 py-3 bg-black/40 rounded-full backdrop-blur-md border border-white/20">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 opacity-20 hover:opacity-100 active:opacity-100 transition-opacity duration-300 px-6 py-3 bg-black/40 rounded-full backdrop-blur-md border border-white/20 safe-bottom">
         <ControlButton
           onClick={() => updateScore('red', -1)}
           className="w-10 h-10 flex items-center justify-center bg-white/10 rounded-full"
@@ -134,6 +155,13 @@ const App = () => {
           className="text-[10px] tracking-widest font-black uppercase px-4"
         >
           Reset
+        </ControlButton>
+
+        <ControlButton
+          onClick={toggleFullscreen}
+          className="text-[10px] tracking-widest font-black uppercase px-4"
+        >
+          {fullscreen ? 'Exit' : 'Full'}
         </ControlButton>
 
         <ControlButton
