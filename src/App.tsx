@@ -51,7 +51,7 @@ const ScorePanel = ({
   score: number;
   onClick: () => void;
 }) => {
-  const bg = team === 'red' ? 'bg-red-600 active:bg-red-500' : 'bg-blue-600 active:bg-blue-500';
+  const bg = team === 'red' ? 'bg-rose-600 active:bg-rose-500' : 'bg-sky-600 active:bg-sky-500';
 
   return (
     <div
@@ -116,7 +116,7 @@ const App = () => {
       {/* Controls - left side in portrait, bottom center in landscape */}
       <div className="absolute left-4 top-1/2 -translate-y-1/2 landscape:left-1/2 landscape:top-auto landscape:bottom-4 landscape:-translate-x-1/2 landscape:translate-y-0 flex flex-col landscape:flex-row items-center gap-4 landscape:gap-3 px-4 py-6 landscape:px-6 landscape:py-3 bg-black/50 rounded-3xl landscape:rounded-full backdrop-blur-md border border-white/20 safe-area">
         <ControlButton
-          onClick={() => updateScore('red', -1)}
+          onClick={() => updateScore(state.swapped ? 'blue' : 'red', -1)}
           className="w-12 h-12 landscape:w-10 landscape:h-10 flex items-center justify-center bg-white/10 rounded-full text-lg"
         >
           -
@@ -137,7 +137,7 @@ const App = () => {
         </ControlButton>
 
         <ControlButton
-          onClick={() => updateScore('blue', -1)}
+          onClick={() => updateScore(state.swapped ? 'red' : 'blue', -1)}
           className="w-12 h-12 landscape:w-10 landscape:h-10 flex items-center justify-center bg-white/10 rounded-full text-lg"
         >
           -
