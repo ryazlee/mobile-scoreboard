@@ -1,4 +1,4 @@
-import { useState, useEffect, type MouseEvent } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // Types
 interface ScoreState {
@@ -36,7 +36,7 @@ const getInitialState = (): ScoreState => {
 
 const vibrate = () => navigator.vibrate?.(50);
 
-const stopPropagation = (fn: () => void) => (e: MouseEvent) => {
+const stopPropagation = (fn: () => void) => (e: React.SyntheticEvent) => {
   e.stopPropagation();
   fn();
 };
@@ -51,11 +51,12 @@ const ScorePanel = ({
   score: number;
   onClick: () => void;
 }) => {
-  const bg = team === 'red' ? 'bg-rose-600 active:bg-rose-500' : 'bg-sky-600 active:bg-sky-500';
+  // Softer, modern pastel-toned dark colors for minimal aesthetic
+  const bg = team === 'red' ? 'bg-rose-500 active:bg-rose-600' : 'bg-sky-500 active:bg-sky-600';
 
   return (
     <div
-      className={`flex-1 flex items-center justify-center ${bg} transition-colors cursor-pointer`}
+      className={`flex-1 flex items-center justify-center ${bg} transition-colors duration-300 cursor-pointer select-none`}
       onClick={onClick}
     >
       <span className="text-[35vw] landscape:text-[20vw] font-black text-white tabular-nums drop-shadow-2xl">
@@ -65,6 +66,7 @@ const ScorePanel = ({
   );
 };
 
+// Text-only control button
 const ControlButton = ({
   children,
   onClick,
@@ -75,16 +77,20 @@ const ControlButton = ({
   className?: string;
 }) => (
   <button
-    className={`text-white font-bold ${className}`}
+    className={`inline-flex min-h-10 min-w-10 items-center justify-center px-3 py-2 text-white/90 font-semibold text-xs tracking-[0.16em] transition-opacity duration-150 hover:opacity-100 active:opacity-60 ${className}`}
     onClick={stopPropagation(onClick)}
   >
     {children}
   </button>
 );
 
+const MinusGlyph = () => <span aria-hidden="true" className="block h-0.5 w-5 rounded-full bg-white/90" />;
+
 // Main App
 const App = () => {
   const [state, setState] = useState<ScoreState>(getInitialState);
+  const tapTimeoutRef = useRef<number | null>(null);
+  const tappedTeamRef = useRef<Team | null>(null);
 
   useEffect(() => {
     const json = JSON.stringify(state);
@@ -105,43 +111,81 @@ const App = () => {
 
   const swap = () => setState(prev => ({ ...prev, swapped: !prev.swapped }));
 
+  useEffect(() => {
+    return () => {
+      if (tapTimeoutRef.current !== null) {
+        window.clearTimeout(tapTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleScoreTap = (team: Team) => {
+    if (tapTimeoutRef.current !== null) {
+      window.clearTimeout(tapTimeoutRef.current);
+      tapTimeoutRef.current = null;
+      tappedTeamRef.current = null;
+      swap();
+      vibrate();
+      return;
+    }
+
+    tappedTeamRef.current = team;
+    tapTimeoutRef.current = window.setTimeout(() => {
+      if (tappedTeamRef.current) {
+        updateScore(tappedTeamRef.current, 1);
+      }
+      tapTimeoutRef.current = null;
+      tappedTeamRef.current = null;
+    }, 200);
+  };
+
   const containerClass = `flex h-dvh w-dvw overflow-hidden select-none touch-none ${state.swapped ? 'flex-col-reverse landscape:flex-row-reverse' : 'flex-col landscape:flex-row'
     }`;
 
   return (
     <div className={containerClass}>
-      <ScorePanel team="red" score={state.red} onClick={() => updateScore('red', 1)} />
-      <ScorePanel team="blue" score={state.blue} onClick={() => updateScore('blue', 1)} />
+      <ScorePanel team="red" score={state.red} onClick={() => handleScoreTap('red')} />
+      <ScorePanel team="blue" score={state.blue} onClick={() => handleScoreTap('blue')} />
 
-      {/* Controls - left side in portrait, bottom center in landscape */}
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 landscape:left-1/2 landscape:top-auto landscape:bottom-4 landscape:-translate-x-1/2 landscape:translate-y-0 flex flex-col landscape:flex-row items-center gap-4 landscape:gap-3 px-4 py-6 landscape:px-6 landscape:py-3 bg-black/50 rounded-3xl landscape:rounded-full backdrop-blur-md border border-white/20 safe-area">
-        <ControlButton
-          onClick={() => updateScore(state.swapped ? 'blue' : 'red', -1)}
-          className="w-12 h-12 landscape:w-10 landscape:h-10 flex items-center justify-center bg-white/10 rounded-full text-lg"
-        >
-          -
-        </ControlButton>
-
-        <ControlButton
-          onClick={swap}
-          className="text-[10px] tracking-widest font-black uppercase py-2 landscape:py-0 px-2 landscape:px-4"
-        >
-          Swap
-        </ControlButton>
-
+      {/* Top Floating Reset Button */}
+      <div className="absolute top-6 inset-x-0 px-4 z-10 flex justify-center">
         <ControlButton
           onClick={reset}
-          className="text-[10px] tracking-widest font-black uppercase py-2 landscape:py-0 px-2 landscape:px-4"
+          className="text-[11px]"
         >
-          Reset
+          RESET
         </ControlButton>
+      </div>
 
-        <ControlButton
-          onClick={() => updateScore(state.swapped ? 'red' : 'blue', -1)}
-          className="w-12 h-12 landscape:w-10 landscape:h-10 flex items-center justify-center bg-white/10 rounded-full text-lg"
-        >
-          -
-        </ControlButton>
+      {/* Bottom Floating Control Dock */}
+      <div className="absolute inset-x-0 bottom-6 px-4 z-10 flex justify-center safe-area">
+        <div className="flex items-center gap-7">
+          {/* Minus Red */}
+          <ControlButton
+            onClick={() => updateScore(state.swapped ? 'blue' : 'red', -1)}
+            className="px-4 py-3"
+            aria-label="Decrease score left"
+          >
+            <MinusGlyph />
+          </ControlButton>
+
+          {/* Swap Sides */}
+          <ControlButton
+            onClick={swap}
+            className="text-[11px]"
+          >
+            SWAP
+          </ControlButton>
+
+          {/* Minus Blue */}
+          <ControlButton
+            onClick={() => updateScore(state.swapped ? 'red' : 'blue', -1)}
+            className="px-4 py-3"
+            aria-label="Decrease score right"
+          >
+            <MinusGlyph />
+          </ControlButton>
+        </div>
       </div>
     </div>
   );
