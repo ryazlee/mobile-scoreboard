@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import MakerCredit from './MakerCredit';
+import { trackPageview } from './analytics';
 
 // Types
 interface ScoreState {
@@ -93,6 +95,10 @@ const App = () => {
   const tappedTeamRef = useRef<Team | null>(null);
 
   useEffect(() => {
+    trackPageview();
+  }, []);
+
+  useEffect(() => {
     const json = JSON.stringify(state);
     localStorage.setItem('vball-score', json);
     window.history.replaceState(null, '', `#${encodeURIComponent(json)}`);
@@ -158,6 +164,8 @@ const App = () => {
       </div>
 
       {/* Bottom Floating Control Dock */}
+      <MakerCredit />
+
       <div className="absolute inset-x-0 bottom-6 px-4 z-10 flex justify-center safe-area">
         <div className="flex items-center gap-7">
           {/* Minus Red */}
