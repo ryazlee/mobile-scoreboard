@@ -33,7 +33,7 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
   z-index: 10;
   margin: 0;
   pointer-events: none;

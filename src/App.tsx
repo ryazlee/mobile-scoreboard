@@ -164,8 +164,6 @@ const App = () => {
       </div>
 
       {/* Bottom Floating Control Dock */}
-      <MakerCredit />
-
       <div className="absolute inset-x-0 bottom-6 px-4 z-10 flex justify-center safe-area">
         <div className="flex items-center gap-7">
           {/* Minus Red */}
@@ -195,6 +193,7 @@ const App = () => {
           </ControlButton>
         </div>
       </div>
+      <MakerCredit />
     </div>
   );
 };
